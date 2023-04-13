@@ -1,0 +1,6 @@
+*.o
+*.a
+huff
+samples
+huffman_data_structure/*.o
+huffman_data_structure/*.a
