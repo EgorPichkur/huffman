@@ -1,12 +1,7 @@
 #include <string.h>
 #include <assert.h>
+#include <common.h>
 #include "tree.h"
-
-#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof(arr[0]))
-#define error(msg) do { fprintf(stderr, "[ERR] file %s/line %d: %s\n", __FILE__, __LINE__, msg); exit(EXIT_FAILURE); } while(0)
-#define ERR_MSG_BUFFER 256
-
-extern bool DEBUG;
 
 frequency_node_ptr build_huffman_tree(binary_heap_ptr priority_queue) {
     frequency_node_ptr left = NULL;
@@ -50,7 +45,7 @@ bool find_symbol_in_tree(frequency_node_ptr root, huffman_code_ptr symbol_data, 
 
     if (!(root->left) && !(root->right)) {
         if (root->symbol_code == symbol) {
-            if (DEBUG) printf("Found symbol %x, CODE: %lX, LENGTH %hu", symbol, symbol_data->code, symbol_data->length);
+            DBG_LOG("Found symbol %x, CODE: %lX, LENGTH %hu\n", symbol, symbol_data->code, symbol_data->length);
             found = true;
         }
         else {
@@ -169,7 +164,6 @@ frequency_node_ptr restore_tree(frequency_node_ptr root, uint8_t *buffer) {
     static uint8_t bits_left_in_symbol = 8;
     static uint8_t symbol = 0;
 
-    // 001A1C01E01B1D
     uint8_t bit = (buffer[current_byte] >> --bits_left_in_byte) & 1;
     if (!bits_left_in_byte) {
         bits_left_in_byte = 8;

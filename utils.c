@@ -1,15 +1,8 @@
 #include "utils.h"
-#include "pointers.h"
+#include <common.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-
-#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof(arr[0]))
-#define error(msg) do { fprintf(stderr, "[ERR] file %s/line %d: %s\n", __FILE__, __LINE__, msg); exit(EXIT_FAILURE); } while(0)
-
-extern bool DEBUG;
-
-#define ERR_MSG_BUFFER 256
 
 void get_frequencies(frequency_node *nodes, FILE *ifile_fd) {
     uint8_t buffer[1024];

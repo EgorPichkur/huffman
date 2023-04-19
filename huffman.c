@@ -1,14 +1,8 @@
 #include <getopt.h>
 #include <stdlib.h>
 #include <string.h>
-#include "pointers.h"
+#include <common.h>
 #include "tree.h"
-
-#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof(arr[0]))
-#define error(msg) do { fprintf(stderr, "[ERR] file %s/line %d: %s\n", __FILE__, __LINE__, msg); exit(EXIT_FAILURE); } while(0)
-#define ERR_MSG_BUFFER 256
-
-bool DEBUG = false;
 
 uintmax_t write_data(FILE*, FILE*, size_t, huffman_code_ptr);
 uint8_t write_symbol(uint64_t*, uintmax_t*, uint8_t*, huffman_code, uint16_t);
@@ -44,11 +38,11 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    if (DEBUG) printf("ofile: %s\n", ofile_name);
+    DBG_LOG("ofile = %s\n", ofile_name);
     CHKPTR(ofile_name);
 
     ifile_name = (uint8_t*)argv[optind];
-    if (DEBUG) printf("ifile: %s\n", ifile_name);
+    DBG_LOG("ifile = %s\n", ifile_name);
     CHKPTR(ifile_name);
 
     if (compress) {
@@ -64,7 +58,7 @@ int main(int argc, char *argv[]) {
         for (uint16_t i = 0; i < 256; i++) {
             if (!nodes[i].frequency) continue;
             number_of_symbols++;
-            if (DEBUG) printf("FREQ: %ld, SYMBOL: %x\n", nodes[i].frequency, nodes[i].symbol_code);
+            DBG_LOG("FREQ: %ld, SYMBOL: %x\n", nodes[i].frequency, nodes[i].symbol_code);
         }
 
         binary_heap_ptr pr_queue = malloc(sizeof(*pr_queue));
@@ -96,12 +90,10 @@ int main(int argc, char *argv[]) {
         significant_bits_last_tree_byte = tree_size % 8;
         tree_size /= 8; /* bits to bytes */
         tree_size++;
-        if (DEBUG) {
-            printf("COMPRESSED DATA SIZE (BYTES): %ld\n", compressed_data_size);
-            printf("SIGNIFICANT BITS IN LAST DATA BYTE: %hu\n", significant_bits_last_data_byte);
-            printf("TREE SIZE: %hu\n", tree_size);
-            printf("SIGNIFICANT BITS IN LAST TREE BYTE: %hu\n", significant_bits_last_tree_byte);
-        }
+        DBG_LOG("COMPRESSED DATA SIZE (BYTES): %ld\n", compressed_data_size);
+        DBG_LOG("SIGNIFICANT BITS IN LAST DATA BYTE: %hu\n", significant_bits_last_data_byte);
+        DBG_LOG("TREE_SIZE: %hu\n", tree_size);
+        DBG_LOG("SIGNIFICANT BITS IN LAST TREE BYTE: %hu\n", significant_bits_last_tree_byte);
 
         ofile_fd = fopen((const char*)ofile_name, "wb");
         if (!ofile_fd) {
@@ -111,35 +103,34 @@ int main(int argc, char *argv[]) {
 
         size_t offset = 0;
         offset = write_header(ofile_fd, tree_size, compressed_data_size, significant_bits_last_tree_byte, significant_bits_last_data_byte);
-        if (DEBUG) {
-            fclose(ofile_fd); /* force write */
-            header_check((const char*)ofile_name, tree_size, compressed_data_size, significant_bits_last_tree_byte, significant_bits_last_data_byte);
-            ofile_fd = fopen((const char*)ofile_name, "ab");
-            if (!ofile_fd) {
-                sprintf((char*)err_msg, "fopen() failed! Cannot open %s file\n", ifile_name);
-                error(err_msg);
-            }
-        }
+        // if (DEBUG) {
+        //     fclose(ofile_fd); /* force write */
+        //     header_check((const char*)ofile_name, tree_size, compressed_data_size, significant_bits_last_tree_byte, significant_bits_last_data_byte);
+        //     ofile_fd = fopen((const char*)ofile_name, "ab");
+        //     if (!ofile_fd) {
+        //         sprintf((char*)err_msg, "fopen() failed! Cannot open %s file\n", ifile_name);
+        //         error(err_msg);
+        //     }
+        // }
 
         write_tree(ofile_fd, tree_root, tree_size);
         offset += tree_size;
 
-        if (DEBUG) {
-            fclose(ofile_fd);
-            header_check((const char*)ofile_name, tree_size, compressed_data_size, significant_bits_last_tree_byte, significant_bits_last_data_byte);
-            tree_check((const char*)ofile_name, tree_root, tree_size, offset - tree_size, nodes);
-            ofile_fd = fopen((const char*)ofile_name, "ab");
-            if (!ofile_fd) {
-                sprintf((char*)err_msg, "fopen() failed! Cannot open %s file\n", ifile_name);
-                error(err_msg);
-            }
-        }
+        // if (DEBUG) {
+        //     fclose(ofile_fd);
+        //     header_check((const char*)ofile_name, tree_size, compressed_data_size, significant_bits_last_tree_byte, significant_bits_last_data_byte);
+        //     tree_check((const char*)ofile_name, tree_root, tree_size, offset - tree_size, nodes);
+        //     ofile_fd = fopen((const char*)ofile_name, "ab");
+        //     if (!ofile_fd) {
+        //         sprintf((char*)err_msg, "fopen() failed! Cannot open %s file\n", ifile_name);
+        //         error(err_msg);
+        //     }
+        // }
         fseek(ifile_fd, 0, SEEK_SET);
-        size_t data_size = offset;
         offset += write_data(ifile_fd, ofile_fd, offset, codes);
         fclose(ifile_fd);
         fclose(ofile_fd);
-        if (DEBUG) printf("COMPRESSED DATA WRITTEN: %zu\n", offset - data_size);
+        DBG_LOG("HEADER SIZE: %zu\n", offset);
         free_heap(&pr_queue);
         free_nodes(&tree_root);
     }
@@ -232,7 +223,7 @@ uintmax_t write_data(FILE* ifile, FILE* ofile, size_t offset, huffman_code_ptr t
             uint8_t written_for_one_symbol = 0;
             hfmncd.code = tree[read_buffer[i]].code;
             hfmncd.length = tree[read_buffer[i]].length;
-            if (DEBUG) printf("Found symbol %x, CODE: %lX, LENGTH %hu\n", read_buffer[i], tree[read_buffer[i]].code, tree[read_buffer[i]].length);
+            DBG_LOG("Found symbol %x, CODE: %lX, LENGTH %hu\n", read_buffer[i], tree[read_buffer[i]].code, tree[read_buffer[i]].length);
             written_for_one_symbol = write_symbol(write_buffer, &current_frame, &bits_left_in_current_frame, hfmncd, ARRAY_SIZE(write_buffer));
             if ((hfmncd.length > written_for_one_symbol) || (current_frame == ARRAY_SIZE(write_buffer))) {
                 fwrite(write_buffer, sizeof(*write_buffer), ARRAY_SIZE(write_buffer), ofile);
@@ -265,7 +256,7 @@ uintmax_t write_data(FILE* ifile, FILE* ofile, size_t offset, huffman_code_ptr t
             ptr++;
             significant_bits_in_frame -= 8;
         }
-        if (DEBUG) printf("DATA WRITTEN: %ld\n", written);
+        DBG_LOG("DATA WRITTEN: %ld\n", written);
     }
     return written;
 }

@@ -1,7 +1,7 @@
 #ifndef NODES_H
 #define NODES_H
 
-#include "pointers.h"
+#include <common.h>
 #include <stdint.h>
 
 typedef struct frequency_node* frequency_node_ptr;

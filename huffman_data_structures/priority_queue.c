@@ -1,8 +1,6 @@
 #include "priority_queue.h"
 #include <stdbool.h>
 
-extern bool DEBUG;
-
 void init_heap(binary_heap_ptr heap, uint16_t max_size) {
     CHKPTR(heap);
     heap->size = 0;
@@ -19,7 +17,7 @@ void free_heap(binary_heap_ptr *heap) {
 
 int8_t insert(binary_heap_ptr heap, frequency_node_ptr value) {
     if (heap->size == heap->capacity) {
-        if (DEBUG) printf("HEAP OVERFLOW!\n");
+        DBG_LOG("%s\n", "HEAP OVERFLOW!\n");
         return -1;
     }
     heap->size++;
@@ -35,7 +33,7 @@ int8_t insert(binary_heap_ptr heap, frequency_node_ptr value) {
 
 frequency_node_ptr extract_min(binary_heap_ptr heap) {
     if (heap->size == 0) {
-        if (DEBUG) printf("HEAP IS EMPTY!\n");
+        DBG_LOG("%s\n", "HEAP IS EMPTY!\n");
         return NULL;
     }
     if (heap->size == 1) {

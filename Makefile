@@ -2,20 +2,23 @@
 
 HUFFMAN_DS := huffman_data_structures
 LIB := lib$(HUFFMAN_DS).a
+project_root_dir:= "$(CURDIR)"
+COMPILE_FLAGS = --std=c11 -Wall -Wextra -pedantic -Wpedantic -Werror -Wshadow -I"$(project_root_dir)"/common -c *.c
 
-compile_curdir:
-	@gcc --std=c11 -Wall -Wextra -pedantic -Wpedantic -Werror -Wshadow -c "$(CURDIR)"/*.c
+compile_project_root_dir:
+	@gcc $(COMPILE_FLAGS)
 compile_huffman_data_structures:
 	@cd "$(HUFFMAN_DS)"; \
-	gcc --std=c11 -Wall -Wextra -pedantic -Wpedantic -Werror -Wshadow -Ofast -fPIC -c *.c;
+	gcc $(COMPILE_FLAGS)
 huffman_static_library: compile_huffman_data_structures 
 	@cd "$(HUFFMAN_DS)"; \
 	ar crs "$(LIB)" *.o; \
 	mv "$(LIB)" "$(CURDIR)";
-binary: huffman_static_library compile_curdir
-	@gcc -Ofast -g -o "$(name)" *.c -L. -l"$(HUFFMAN_DS)"
-all: clean huffman_static_library compile_curdir
-	@gcc -Ofast -g -o huff *.c -L. -l"$(HUFFMAN_DS)"
+debug: COMPILE_FLAGS += -DDEBUG -g
+debug: huffman_static_library compile_project_root_dir
+	@gcc -DDEBUG -g -o huff_debug *.c -L. -l"$(HUFFMAN_DS)" -I"$(project_root_dir)"/common
+release: clean huffman_static_library compile_project_root_dir
+	@gcc -Ofast -o huff *.c -L. -l"$(HUFFMAN_DS)" -I"$(project_root_dir)"/common
 clean:
 	@rm "$(CURDIR)"/*.o 2>/dev/null || true
 	@rm "$(CURDIR)"/*.a 2>/dev/null || true
